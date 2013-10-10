@@ -23,15 +23,15 @@ using System.Text;
 using UploadLibrary;//记着引用这个类库
 namespace UploadTest
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            //场景一，服务器端或者客户端直接上传文件到存储平台
-            HuaweiDbankCloud HDC = new HuaweiDbankCloud(APPID, APPSECRET, APPNAME);
-            Console.WriteLine(HDC.Upload("/dl/APPNAME/chat.rar", "E://chat.rar"));
-        }
-    }
+	class Program
+	{
+		static void Main(string[] args)
+		{
+			//场景一，服务器端或者客户端直接上传文件到存储平台
+			HuaweiDbankCloud HDC = new HuaweiDbankCloud(APPID, APPSECRET, APPNAME);
+			Console.WriteLine(HDC.Upload("/dl/APPNAME/chat.rar", "E://chat.rar"));
+		}
+	}
 }
 </code></pre>
 
@@ -47,33 +47,33 @@ using System.IO;
 using UploadLibrary;//记着引用这个类库
 public partial class Getinfo : System.Web.UI.Page
 {
-    #region 配置部分
+	#region 配置部分
 
-    //平台申请的APPID与APPSECRET和APPNAME
-    //
-    private string APPID        = ;
-    private string APPSECRET    = ;
-    private string APPNAME      = ;
+	//平台申请的APPID与APPSECRET和APPNAME
+	//
+	private string APPID		= ;
+	private string APPSECRET	= ;
+	private string APPNAME	  = ;
 
-    #endregion
+	#endregion
 
-    #region 获取上传IP，密钥以及时间戳
-    protected void Page_Load(object sender, EventArgs e)
-    {
-        try
-        {
-            HuaweiDbankCloud HDC = new HuaweiDbankCloud(APPID, APPSECRET, APPNAME);
-            string host = "", key = "", ts= "";
-            HDC.GetHostAndKeyAndTs(Request.ServerVariables["REMOTE_ADDR"], ref host, ref key, ref ts);
-            //把上传IP和密钥告诉别人
-            Response.Write(host+ " " + key + " " + ts);
-        }
-        catch (Exception)
-        {
-            Response.Write("error");
-        }
-    }
-    #endregion
+	#region 获取上传IP，密钥以及时间戳
+	protected void Page_Load(object sender, EventArgs e)
+	{
+		try
+		{
+			HuaweiDbankCloud HDC = new HuaweiDbankCloud(APPID, APPSECRET, APPNAME);
+			string host = "", key = "", ts= "";
+			HDC.GetHostAndKeyAndTs(Request.ServerVariables["REMOTE_ADDR"], ref host, ref key, ref ts);
+			//把上传IP和密钥告诉别人
+			Response.Write(host+ " " + key + " " + ts);
+		}
+		catch (Exception)
+		{
+			Response.Write("error");
+		}
+	}
+	#endregion
 }
 </code></pre>
 
@@ -86,20 +86,20 @@ using System.Text;
 using UploadLibrary;//记着引用这个类库
 namespace UploadTest
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            //场景二，客户端获取服务器信息后直接上传文件到存储平台
+	class Program
+	{
+		static void Main(string[] args)
+		{
+			//场景二，客户端获取服务器信息后直接上传文件到存储平台
 			
 			//步骤一：访问服务器http://demo/Getinfo.aspx获取上传IP，临时密钥，时间戳信息
 			...
 			
 			//步骤二：上传文件
 			HuaweiDbankCloud HDCClient = new HuaweiDbankCloud();
-            Console.WriteLine(HDCClient.ClientUpload(host, key, ts, "/dl/"+APPNAME+"/chat.rar", "E://chat.rar"));
-        }
-    }
+			Console.WriteLine(HDCClient.ClientUpload(host, key, ts, "/dl/"+APPNAME+"/chat.rar", "E://chat.rar"));
+		}
+	}
 }
 </code></pre>
 
@@ -109,3 +109,4 @@ Weibo Account
 Have a question? [@littley](http://weibo.com/littley)
 
 2013/10/10 14:39:16 
+
