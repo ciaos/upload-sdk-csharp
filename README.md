@@ -35,7 +35,7 @@ namespace UploadTest
 }
 </code></pre>
 
-*   应用场景4（服务器端，自己使用）
+*   应用场景4（服务器端，自己使用，将用HuaweiDbankCloud.cs做成的dll放在网站根目录bin文件夹下）
 <pre><code>
 using System;
 using System.Collections.Generic;
