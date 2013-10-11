@@ -15,7 +15,7 @@ Upload SDK CSharp
 ----------
 
 *	应用场景1/2/3
-<pre><code>
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -33,10 +33,10 @@ namespace UploadTest
 		}
 	}
 }
-</code></pre>
+```
 
 *   应用场景4（服务器端，自己使用，将用HuaweiDbankCloud.cs做成的dll放在网站根目录bin文件夹下）
-<pre><code>
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Web;
@@ -75,10 +75,10 @@ public partial class Getinfo : System.Web.UI.Page
 	}
 	#endregion
 }
-</code></pre>
+```
 
 *   应用场景4（客户端，小伙伴们使用）
-<pre><code>
+```csharp
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -101,7 +101,7 @@ namespace UploadTest
 		}
 	}
 }
-</code></pre>
+```
 
 Weibo Account
 -------------
