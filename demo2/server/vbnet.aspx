@@ -10,9 +10,9 @@
     <%
         Dim UL = New HuaweiDbankCloud("xxxxx", "xxxxxxxxxxxxxxxxxxxxxxxxx", "xxx")
         Dim Host, Key, Ts As String
-        Host = "A"
-        Key = "B"
-        Ts = "V"
+        Host = ""
+        Key  = ""
+        Ts   = ""
         Dim Remote_Addr As String
         Remote_Addr = Request.ServerVariables("REMOTE_ADDR")
         UL.GetHostAndKeyAndTs(Remote_Addr, Host, Key, Ts)
