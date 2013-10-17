@@ -60,9 +60,17 @@ namespace UploadLibrary
          * CallbackURL:     "http://mydomain.com/callback.php"
          * CallbackStatus:  "Tag:from dbank storage"
          */
-        public bool Upload(String Uri, String LocalFile, String CallbackURL = null, String CallbackStatus = null)
+        public bool Upload(String Uri, String LocalFile)
         {
+            if (_UploadHost == null)
+            {
+                if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
+            }
 
+            return UploadJob(Uri, LocalFile, null, null, null);
+        }
+        public bool Upload(String Uri, String LocalFile, String CallbackURL, String CallbackStatus)
+        {
             if (_UploadHost == null)
             {
                 if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
@@ -87,7 +95,7 @@ namespace UploadLibrary
             DateTime nowTime = DateTime.Now;
             long unixTime = (long)Math.Round((nowTime - startTime).TotalSeconds, MidpointRounding.AwayFromZero);
             Ts = unixTime.ToString();
-            Key = bash64_hash_hmac(Ts, this._AppSecret);
+            Key = bash64_hash_hmac(Ts, this._AppSecret, false);
 
             return true;
         }
@@ -105,6 +113,12 @@ namespace UploadLibrary
             _UploadHost = Host;
             _AppSecret = TempSecret;
             return UploadJob(Uri, LocalFile, Ts, null, null);
+        }
+        public bool ClientUpload(String Host, String TempSecret, String Ts, String Uri, String LocalFile, String CallbackURL, String CallbackStatus)
+        {
+            _UploadHost = Host;
+            _AppSecret = TempSecret;
+            return UploadJob(Uri, LocalFile, Ts, CallbackURL, CallbackStatus);
         }
 
         #endregion
@@ -160,7 +174,7 @@ namespace UploadLibrary
         }
 
         //上传
-        protected bool UploadJob(String Uri, String LocalFile, String Ts = null, String CallbackURL = null, String CallbackStatus = null)
+        protected bool UploadJob(String Uri, String LocalFile, String Ts, String CallbackURL, String CallbackStatus)
         {
             int trytimes = 3;//上传尝试3次
 
@@ -211,7 +225,6 @@ namespace UploadLibrary
             string signatureString = getSignatureString("PUT", Uri + "?init", dt);
             string nsp_sig = bash64_hash_hmac(signatureString, _AppSecret, true);
 
-            Console.WriteLine(signatureString + " " + _AppSecret + " " + nsp_sig);
             dt["nsp-sig"] = nsp_sig;
             Dictionary<String,String>Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?init", LocalFile, dt, UploadState.INIT);
 
@@ -331,7 +344,6 @@ namespace UploadLibrary
             }
             string key = getMd5Hash(md5str).ToUpper();
             data += "nsp_key=" + key;
-
             return data;
         }
 
@@ -375,7 +387,7 @@ namespace UploadLibrary
             return Regex.Replace(signatureString, "(%[0-9a-f][0-9a-f])", c => c.Value.ToUpper());
         }
 
-        private String bash64_hash_hmac(string signatureString, string secretKey, bool raw_output = false)
+        private String bash64_hash_hmac(string signatureString, string secretKey, bool raw_output)
         {
             var enc = Encoding.ASCII;
             HMACSHA1 hmac = new HMACSHA1(enc.GetBytes(secretKey));
