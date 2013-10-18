@@ -34,6 +34,8 @@ C . 使用说明
 1. 客户端(服务器)直接上传至 距自己最近速度最快的云存储服务器
 2. 上传成功后客户端进行后续业务操作
 
+![](http://zl.hwpan.com/u12134807/demo1.png)
+
 代码示例如下（详见[demo1](https://github.com/ciaos/upload-sdk-csharp/blob/master/demo1/Program.cs)）
 
 ```csharp
@@ -55,6 +57,8 @@ Console.WriteLine(HDC.Upload("/dl/APPNAME/chat.rar", "E://chat.rar"));
 1. 用户访问业务服务器
 2. 业务服务器访问华为云存储接口获取距离用户最近最快的上传IP
 3. 业务服务器生成临时密钥和时间戳返回给用户用于上传
+
+![](http://zl.hwpan.com/u12134807/demo2.png)
 
 代码示例如下（详见[demo2/server](https://github.com/ciaos/upload-sdk-csharp/blob/master/demo2/server/)）
 
@@ -118,3 +122,4 @@ Console.WriteLine(HDCClient.ClientUpload(host, key, ts, "/dl/"+APPNAME+"/chat.ra
 如有疑问 [@littley](http://weibo.com/littley)
 
 2013/10/10 14:39:16 
+
