@@ -21,7 +21,7 @@ namespace UploadLibrary
         private String _AppID, _AppSecret, _AppName;
         private String _UploadHost;
 
-        protected const String _RestURI = "https://api.dbank.com/rest.php";
+        protected const String _RestURI = "http://api.dbank.com/rest.php";
         #endregion
 
         #region 构造函数
@@ -68,7 +68,7 @@ namespace UploadLibrary
             {
                 if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
             }
-
+            _UploadHost = "14.17.110.140";
             return UploadJob(Uri, LocalFile, null, null, null);
         }
         public bool Upload(String Uri, String LocalFile, String CallbackURL, String CallbackStatus)
@@ -205,16 +205,16 @@ namespace UploadLibrary
             String md5 = HuaweiDbankCloudTool.GetMD5Hash(LocalFile).ToLower();
             dt.Add("nsp-file-md5", md5);
 
-
             JavaScriptSerializer serializer = new JavaScriptSerializer();
             //计算文件分片md5
             FileStream aFile = File.OpenRead(LocalFile);
             long start, end;
             String[] md5Arr = new String[2];
             for (int i = 1; i <= 2; i++) {
+                
                 start = ((long)CRC32Cls.GetCRC32Str(md5 + i.ToString())) % fileinfo.Length;
                 end = (start + 1024 * 1024 > fileinfo.Length -1) ? fileinfo.Length - 1 : start + 1024 * 1024;
-                byte[] tData = new byte[end - start + 1]; // 此处byte[]不能转为String再转回byte[],数据会丢失
+                byte[] tData = new byte[end - start + 1];
                 lock (fsLock)
                 {
                     aFile.Seek(start, SeekOrigin.Begin);
@@ -222,23 +222,24 @@ namespace UploadLibrary
                 }
                 MD5 md5Hasher = MD5.Create();
                 byte[] data = md5Hasher.ComputeHash(tData);
+                sbyte[] sData = (sbyte[])(Array)data;
                 StringBuilder sBuilder = new StringBuilder();
-                for (int j = 0; j < data.Length; j++)
+                for (int j = 0; j < sData.Length; j++)
                 {
-                    sBuilder.Append(data[j].ToString("x2"));
+                    sBuilder.Append(sData[j].ToString("x2"));
                 }
+                String aaa = sBuilder.ToString();
                 md5Arr[i - 1] = sBuilder.ToString();
             }
             aFile.Close();
             dt.Add("nsp-content-md5",serializer.Serialize(md5Arr));
-            
+            return false;
             //上传初始化操作
             string signatureString = getSignatureString("PUT", Uri + "?init", dt);
             string nsp_sig = bash64_hash_hmac(signatureString, _AppSecret, true);
 
             dt["nsp-sig"] = nsp_sig;
             Dictionary<String,String>Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?init", LocalFile, dt, UploadState.INIT);
-
             //上传操作
             Dictionary<string, object> json;
             object upload_status = null;
@@ -677,6 +678,7 @@ namespace UploadLibrary
             //生成码表
             GetCRC32Table();
             byte[] buffer = System.Text.ASCIIEncoding.ASCII.GetBytes(sInputString); ulong value = 0xffffffff;
+
             int len = buffer.Length;
             for (int i = 0; i < len; i++)
             {
@@ -687,3 +689,4 @@ namespace UploadLibrary
     }
     #endregion
 }
+
