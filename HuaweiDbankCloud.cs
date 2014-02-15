@@ -69,7 +69,16 @@ namespace UploadLibrary
                 if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
             }
 
-            return UploadJob(Uri, LocalFile, null, null, null);
+            return UploadJob(Uri, LocalFile, null, null, null, null);
+        }
+        public bool Upload(String Uri, String LocalFile, IProgressListener progress)
+        {
+            if (_UploadHost == null)
+            {
+                if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
+            }
+
+            return UploadJob(Uri, LocalFile, null, null, null, progress);
         }
         public bool Upload(String Uri, String LocalFile, String CallbackURL, String CallbackStatus)
         {
@@ -78,7 +87,7 @@ namespace UploadLibrary
                 if ((_UploadHost = GetUploadHost(null)) == null) { return false; }
             }
 
-            return UploadJob(Uri, LocalFile, null, CallbackURL, CallbackStatus);
+            return UploadJob(Uri, LocalFile, null, CallbackURL, CallbackStatus, null);
         }
 
         /**
@@ -114,13 +123,19 @@ namespace UploadLibrary
         {
             _UploadHost = Host;
             _AppSecret = TempSecret;
-            return UploadJob(Uri, LocalFile, Ts, null, null);
+            return UploadJob(Uri, LocalFile, Ts, null, null, null);
+        }
+        public bool ClientUpload(String Host, String TempSecret, String Ts, String Uri, String LocalFile, IProgressListener progress)
+        {
+            _UploadHost = Host;
+            _AppSecret = TempSecret;
+            return UploadJob(Uri, LocalFile, Ts, null, null, progress);
         }
         public bool ClientUpload(String Host, String TempSecret, String Ts, String Uri, String LocalFile, String CallbackURL, String CallbackStatus)
         {
             _UploadHost = Host;
             _AppSecret = TempSecret;
-            return UploadJob(Uri, LocalFile, Ts, CallbackURL, CallbackStatus);
+            return UploadJob(Uri, LocalFile, Ts, CallbackURL, CallbackStatus, null);
         }
 
         #endregion
@@ -176,7 +191,7 @@ namespace UploadLibrary
         }
 
         //上传
-        protected bool UploadJob(String Uri, String LocalFile, String Ts, String CallbackURL, String CallbackStatus)
+        protected bool UploadJob(String Uri, String LocalFile, String Ts, String CallbackURL, String CallbackStatus, IProgressListener progress)
         {
             int trytimes = 3;//上传尝试3次
 
@@ -211,9 +226,10 @@ namespace UploadLibrary
             FileStream aFile = File.OpenRead(LocalFile);
             long start, end;
             String[] md5Arr = new String[2];
-            for (int i = 1; i <= 2; i++) {
+            for (int i = 1; i <= 2; i++)
+            {
                 start = ((long)CRC32Cls.GetCRC32Str(md5 + i.ToString())) % fileinfo.Length;
-                end = (start + 1024 * 1024 > fileinfo.Length -1) ? fileinfo.Length - 1 : start + 1024 * 1024;
+                end = (start + 1024 * 1024 > fileinfo.Length - 1) ? fileinfo.Length - 1 : start + 1024 * 1024;
                 byte[] tData = new byte[end - start + 1]; // 此处byte[]不能转为String再转回byte[],数据会丢失
                 lock (fsLock)
                 {
@@ -230,24 +246,24 @@ namespace UploadLibrary
                 md5Arr[i - 1] = sBuilder.ToString();
             }
             aFile.Close();
-            dt.Add("nsp-content-md5",serializer.Serialize(md5Arr));
-            
+            dt.Add("nsp-content-md5", serializer.Serialize(md5Arr));
             //上传初始化操作
             string signatureString = getSignatureString("PUT", Uri + "?init", dt);
             string nsp_sig = bash64_hash_hmac(signatureString, _AppSecret, true);
 
             dt["nsp-sig"] = nsp_sig;
-            Dictionary<String,String>Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?init", LocalFile, dt, UploadState.INIT);
+            Dictionary<String, String> Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?init", LocalFile, dt, UploadState.INIT, null);
 
             //上传操作
             Dictionary<string, object> json;
             object upload_status = null;
-            while(trytimes -- > 0){
-                if(Ret["StatusCode"] == HttpStatusCode.OK.ToString())
+            while (trytimes-- > 0)
+            {
+                if (Ret["StatusCode"] == HttpStatusCode.OK.ToString())
                 { //飞速上传成功
                     return true;
                 }
-                else if(Ret["StatusCode"] == HttpStatusCode.Created.ToString())
+                else if (Ret["StatusCode"] == HttpStatusCode.Created.ToString())
                 {
                     json = (Dictionary<string, object>)serializer.DeserializeObject(Ret["Body"]);
                     try
@@ -266,7 +282,8 @@ namespace UploadLibrary
                     }
                     //upload range
                 }
-                else if (Ret["StatusCode"] == HttpStatusCode.Unauthorized.ToString()) { 
+                else if (Ret["StatusCode"] == HttpStatusCode.Unauthorized.ToString())
+                {
                     break;
                 }
                 else //其它异常时，寻找断点
@@ -277,7 +294,7 @@ namespace UploadLibrary
                     signatureString = getSignatureString("PUT", Uri + "?resume", dt);
                     nsp_sig = bash64_hash_hmac(signatureString, _AppSecret, true);
                     dt["nsp-sig"] = nsp_sig;
-                    Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?resume", LocalFile, dt, UploadState.RESUME);
+                    Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri + "?resume", LocalFile, dt, UploadState.RESUME, null);
 
                     continue;
                 }
@@ -299,7 +316,7 @@ namespace UploadLibrary
                 signatureString = getSignatureString("PUT", Uri, dt);
                 dt["nsp-sig"] = bash64_hash_hmac(signatureString, _AppSecret, true);
                 //上传文件
-                Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri, LocalFile, dt, UploadState.ACTION);
+                Ret = HuaweiDbankCloudHelper._RequestUpload("http://" + this._UploadHost + Uri, LocalFile, dt, UploadState.ACTION, progress);
             }
             return false;
         }
@@ -443,7 +460,7 @@ namespace UploadLibrary
         #region 记录日志
         public static void log(LogMsgType logtype, string logmsg)
         {
-            if (logtype < loglevel){return;}
+            if (logtype < loglevel) { return; }
             try
             {
                 DateTime nowTime = DateTime.Now;
@@ -481,8 +498,16 @@ namespace UploadLibrary
     }
     #endregion
 
+    #region 进度回调接口
+    public interface IProgressListener
+    {
+        void onProgress(long curBytePos, long totalBytes);
+    }
+    #endregion
+
     #region 网络请求工具类
-    class HuaweiDbankCloudHelper {
+    class HuaweiDbankCloudHelper
+    {
         public static String _Request(string httpUrl, string postData)
         {
             string Result;
@@ -495,7 +520,7 @@ namespace UploadLibrary
                 Stream postStream = req.GetRequestStream();
                 byte[] byteArray = Encoding.UTF8.GetBytes(postData);
                 postStream.Write(byteArray, 0, byteArray.Length);
-                
+
                 HttpWebResponse res = (HttpWebResponse)req.GetResponse();
 
                 NSPLog.log(LogMsgType.NSP_LOG_NOTICE, "发起请求 " + httpUrl + "?" + postData);
@@ -526,16 +551,17 @@ namespace UploadLibrary
                     throw new WebException();
                 }
             }
-            catch (Exception ex) {
+            catch (Exception ex)
+            {
                 NSPLog.log(LogMsgType.NSP_LOG_ERR, "请求网络错误");
                 return ex.ToString();
             }
             return Result;
         }
 
-        public static Dictionary<String,String> _RequestUpload(String uploadUrl, String localFile, SortedDictionary<String, String> headers, UploadState state)
+        public static Dictionary<String, String> _RequestUpload(String uploadUrl, String localFile, SortedDictionary<String, String> headers, UploadState state, IProgressListener progress)
         {
-            Dictionary<String,String> Ret = new Dictionary<String,String>();
+            Dictionary<String, String> Ret = new Dictionary<String, String>();
             string Result;
             try
             {
@@ -548,7 +574,7 @@ namespace UploadLibrary
                 {
                     req.Headers.Add(kv.Key.ToString(), kv.Value.ToString());
                 }
-                req.UserAgent=".Net SDK/1.0.0";
+                req.UserAgent = ".Net SDK/1.0.0";
 
                 if (state == UploadState.ACTION)
                 {
@@ -564,20 +590,44 @@ namespace UploadLibrary
                     }
 
                     long pos = 0;
-                    if(headers.ContainsKey("nsp-content-range")){
+                    if (headers.ContainsKey("nsp-content-range"))
+                    {
                         pos = long.Parse(headers["nsp-content-range"].Split('-')[0]);
                     }
 
-                    if (pos > 0) {
+                    if (pos > 0)
+                    {
                         fileStream.Seek(pos, SeekOrigin.Begin);
                     }
 
-                    byte[] buffer = new Byte[checked((uint)Math.Min(4096, (int)fileStream.Length))];
+                    long sentBytes = 0, totalBytes = fileStream.Length;
+                    byte[] buffer = new Byte[checked((uint)Math.Min(4096, totalBytes))];
                     int bytesRead = 0;
+
+                    DateTime currts, prevts = DateTime.Now;
+                    if (progress != null)
+                    {
+                        progress.onProgress(0, totalBytes);
+                    }
                     while ((bytesRead = fileStream.Read(buffer, 0, buffer.Length)) != 0)
                     {
                         postStream.Write(buffer, 0, bytesRead);
+                        if (progress != null)
+                        {
+                            sentBytes += bytesRead;
+                            currts = DateTime.Now;
+                            if (currts.Subtract(prevts).TotalSeconds >= 0.01)
+                            {
+                                progress.onProgress(sentBytes, totalBytes);
+                                prevts = currts;
+                            }
+                        }
                     }
+                    if (progress != null)
+                    {
+                        progress.onProgress(sentBytes, totalBytes);
+                    }
+                    postStream.Close();
                 }
                 NSPLog.log(LogMsgType.NSP_LOG_NOTICE, "发起请求 " + uploadUrl);
 
@@ -609,18 +659,19 @@ namespace UploadLibrary
             catch (Exception ex)
             {
                 NSPLog.log(LogMsgType.NSP_LOG_ERR, "请求网络错误");
-                Ret.Add("StatusCode","0");
-                Ret.Add("Body","请求网络错误 " + ex.ToString());
+                Ret.Add("StatusCode", "0");
+                Ret.Add("Body", "请求网络错误 " + ex.ToString());
                 return Ret;
             }
-            
+
             return Ret;
         }
     }
     #endregion
 
     #region 其他工具类
-    class HuaweiDbankCloudTool {
+    class HuaweiDbankCloudTool
+    {
         public static string GetMD5Hash(string pathName)
         {
             string ret = "";
@@ -687,3 +738,4 @@ namespace UploadLibrary
     }
     #endregion
 }
+
